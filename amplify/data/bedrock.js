@@ -7,18 +7,28 @@ export function request(ctx) {
    
     // Return the request configuration 
     return { 
-      resourcePath: `/model/amazon.titan-text-express-v1/invoke`, 
+      resourcePath: `/model/amazon.nova-lite-v1:0/invoke`, 
       method: "POST", 
       params: { 
         headers: { 
           "Content-Type": "application/json", 
         }, 
         body: JSON.stringify({ 
-          inputText: prompt,
-          textGenerationConfig: {
-            maxTokenCount: 700,
+          schemaVersion: "messages-v1",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          inferenceConfig: {
+            max_new_tokens: 700,
             temperature: 0.7,
-            topP: 0.9,
+            top_p: 0.9,
           },
         }), 
       }, 
@@ -48,7 +58,7 @@ export function request(ctx) {
       };
     }
 
-    const text = parsedBody?.results?.[0]?.outputText;
+    const text = parsedBody?.output?.message?.content?.[0]?.text;
     if (!text) {
       return {
         error: "Bedrock response did not contain generated text",
