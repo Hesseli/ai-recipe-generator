@@ -33,12 +33,36 @@ export function request(ctx) {
   } 
    
   export function response(ctx) { 
-    // Parse the response body 
-    const parsedBody = JSON.parse(ctx.result.body); 
-    // Extract the text content from the response 
-    const res = { 
-      body: parsedBody.content[0].text, 
+    if (ctx.error) {
+      return {
+        error: ctx.error.message || "Bedrock request failed",
+      };
+    }
+
+    if (!ctx.result?.body) {
+      return {
+        error: "Bedrock returned an empty response",
+      };
+    }
+
+    const parsedBody = JSON.parse(ctx.result.body);
+
+    if (ctx.result.statusCode && ctx.result.statusCode >= 300) {
+      return {
+        error:
+          parsedBody?.message ||
+          `Bedrock returned status ${ctx.result.statusCode}`,
+      };
+    }
+
+    const text = parsedBody?.content?.[0]?.text;
+    if (!text) {
+      return {
+        error: "Bedrock response did not contain generated text",
+      };
+    }
+
+    return {
+      body: text,
     }; 
-    // Return the response 
-    return res; 
   }

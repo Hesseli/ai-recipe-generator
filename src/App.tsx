@@ -13,23 +13,40 @@ const amplifyClient = generateClient<Schema>({
 });
 function App() {
   const [result, setResult] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError("");
+    setResult("");
     setLoading(true);
     try {
       const formData = new FormData(event.currentTarget);
-      const { data, errors } = await 
-amplifyClient.queries.askBedrock({
-        ingredients: [formData.get("ingredients")?.toString() || ""],
+      const rawIngredients = formData.get("ingredients")?.toString() || "";
+      const ingredients = rawIngredients
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      if (ingredients.length === 0) {
+        setError("Add at least one ingredient before generating.");
+        return;
+      }
+
+      const { data, errors } = await amplifyClient.queries.askBedrock({
+        ingredients,
       });
-      if (!errors) {
-        setResult(data?.body || "No data returned");
+
+      if (errors?.length) {
+        setError(errors.map((item) => item.message).join("\n"));
+      } else if (data?.error) {
+        setError(data.error);
       } else {
-        console.log(errors);
+        setResult(data?.body || "No data returned");
       }
     } catch (e) {
-      alert(`An error occurred: ${e}`);
+      const message = e instanceof Error ? e.message : String(e);
+      setError(`An error occurred: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -73,7 +90,10 @@ recipe on
             <Placeholder size="large" />
           </div>
         ) : (
-          result && <p className="result">{result}</p>
+          <>
+            {error && <p className="error-message">{error}</p>}
+            {result && <p className="result">{result}</p>}
+          </>
         )}
       </div>
     </div>
