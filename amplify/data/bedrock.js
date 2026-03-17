@@ -7,26 +7,19 @@ export function request(ctx) {
    
     // Return the request configuration 
     return { 
-      resourcePath: `/model/anthropic.claude-3-sonnet-20240229-v1:0/invoke`, 
+      resourcePath: `/model/amazon.titan-text-express-v1/invoke`, 
       method: "POST", 
       params: { 
         headers: { 
           "Content-Type": "application/json", 
         }, 
         body: JSON.stringify({ 
-          anthropic_version: "bedrock-2023-05-31", 
-                    max_tokens: 1000, 
-          messages: [ 
-            { 
-              role: "user", 
-              content: [ 
-                { 
-                  type: "text", 
-                  text: `\n\nHuman: ${prompt}\n\nAssistant:`, 
-                }, 
-              ], 
-            }, 
-          ], 
+          inputText: prompt,
+          textGenerationConfig: {
+            maxTokenCount: 700,
+            temperature: 0.7,
+            topP: 0.9,
+          },
         }), 
       }, 
     }; 
@@ -55,7 +48,7 @@ export function request(ctx) {
       };
     }
 
-    const text = parsedBody?.content?.[0]?.text;
+    const text = parsedBody?.results?.[0]?.outputText;
     if (!text) {
       return {
         error: "Bedrock response did not contain generated text",
